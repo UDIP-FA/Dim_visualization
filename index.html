@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Mask & CSV Viewer</title>
+  <!-- Modern font -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; background: #f5f7fa; color: #333; height: 100vh; display: flex; flex-direction: column; }
+    header { background: #fff; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
+    header img { height: 50px; object-fit: contain; }
+    #container { display: flex; flex: 1; overflow: hidden; }
+    #mask-select-container { width: 220px; background: #fff; padding: 20px; border-right: 1px solid #e0e0e0; box-shadow: 2px 0 8px rgba(0,0,0,0.05); }
+    #mask-select-container h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; color: #444; }
+    #mask-select { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccd0d5; border-radius: 4px; appearance: none;
+      background: url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center;
+      background-color: #fff; background-size:12px; cursor:pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border-color .2s; }
+    #mask-select:hover { border-color: #a0a8b0; }
+    #mask-select:focus { border-color: #5b9dd9; outline: none; box-shadow: 0 0 0 3px rgba(91,157,217,0.3); }
+
+    #main-panel { flex: 1; display: flex; flex-direction: column; background: #fff; margin: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
+    #viewer-container { flex: 2; border-bottom: 1px solid #e0e0e0; }
+    #mask-viewer { width: 100%; height: 100%; border: none; }
+    #table-container { flex: 1; overflow: auto; padding: 12px; background: #fafafa; }
+    #table-container table { width: 100%; border-collapse: collapse; }
+    #table-container th, #table-container td { border:1px solid #ddd; padding:6px; font-size:12px; }
+    #table-container th { background:#f1f1f1; font-weight:500; }
+
+    footer { background: #fff; padding: 10px 20px; font-size:12px; color:#666; text-align:center; border-top:1px solid #e0e0e0; box-shadow:0 -2px 4px rgba(0,0,0,0.05); }
+    footer a { color:#007acc; text-decoration:none; }
+    footer a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo-horizontal.png" alt="UTHealth Houston – McWilliams School Logo">
+  </header>
+
+  <div id="container">
+    <div id="mask-select-container">
+      <h3>Select a Mask</h3>
+      <select id="mask-select">
+        <option value="">-- choose a mask --</option>
+      </select>
+    </div>
+
+    <div id="main-panel">
+      <div id="viewer-container">
+        <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
+      </div>
+      <div id="table-container"></div>
+    </div>
+  </div>
+
+  <footer>
+    Unveiling genetic architecture of white matter microstructure through unsupervised deep representation learning of fractional anisotropy images<br>
+    Xingzhong Zhao, Ziqian Xie, Wei He, Myriam Fornage, Degui Zhi<br>
+    medRxiv 2025.07.04.25330856; doi: <a href="https://doi.org/10.1101/2025.07.04.25330856" target="_blank">10.1101/2025.07.04.25330856</a>
+  </footer>
+
+  <script>
+    // Update to match your actual folder names
+    const htmlBase = '3d_html_masks';
+    const csvBase  = 'WM_stat';      // ← your CSVs live here: WM_stat/Dim_0.csv … Dim_127.csv
+
+    // Build mask list
+    const masks = Array.from({length:128},(_,i)=>`Dim_${i}`);
+    const selectEl = document.getElementById('mask-select');
+    const maskFrame = document.getElementById('mask-viewer');
+    const tableContainer = document.getElementById('table-container');
+
+    masks.forEach(name=>{
+      const opt = document.createElement('option');
+      opt.value=name; opt.textContent=name;
+      selectEl.appendChild(opt);
+    });
+
+    selectEl.addEventListener('change',e=>{
+      const name=e.target.value;
+      if(!name){
+        maskFrame.src=''; tableContainer.innerHTML=''; return;
+      }
+      // load 3D html
+      maskFrame.src=`${htmlBase}/${name}.html`;
+      // fetch and render CSV
+      fetch(`${csvBase}/${name}.csv`)
+        .then(r=>{
+          console.log('Fetch',r.status, r.url);
+          if(!r.ok) throw new Error(`CSV ${name} not found`);
+          return r.text();
+        })
+        .then(text=>{
+          const rows=text.trim().split('\n').map(r=>r.split(','));
+          const tbl=document.createElement('table');
+          const thead=tbl.createTHead().insertRow();
+          rows[0].forEach(c=>{ const th=document.createElement('th'); th.textContent=c; thead.appendChild(th); });
+          const tbody=tbl.createTBody();
+          rows.slice(1).forEach(r=>{
+            const tr=tbody.insertRow();
+            r.forEach(c=>{ const td=tr.insertCell(); td.textContent=c; });
+          });
+          tableContainer.innerHTML=''; tableContainer.appendChild(tbl);
+        })
+        .catch(err=>{
+          console.error(err);
+          tableContainer.textContent = 'Unable to load CSV data.';
+        });
+    });
+  </script>
+</body>
+</html>

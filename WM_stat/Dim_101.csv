@@ -1,0 +1,51 @@
+WM tracts,Abbreviation,P value,PBonf.
+Middle cerebellar peduncle,MCP,14.5146431922913,1
+Pontine crossing tract (a part of MCP),PCT,10.3403129577637,1
+Genu of corpus callosum,GCC,14.4871873855591,1
+Body of corpus callosum,BCC,14.9543752670288,1
+Splenium of corpus callosum,SCC,18.2348728179932,9.999e-05
+Fornix (column and body of fornix),FX,19.1445140838623,9.999e-05
+Corticospinal tract left,CST-L,14.1288294792175,1
+Corticospinal tract right,CST-R,13.5157203674316,1
+Medial lemniscus left,ML-L,14.5168871879578,1
+Medial lemniscus right,ML-R,12.8479747772217,1
+Inferior cerebellar peduncle left,ICP-L,12.0449209213257,1
+Inferior cerebellar peduncle right,ICP-R,13.9244012832642,1
+Superior cerebellar peduncle left,SCP-L,15.2192716598511,0.9590041
+Superior cerebellar peduncle right,SCP-R,11.7812776565552,1
+Cerebral peduncle left,CP-L,16.9061422348022,9.999e-05
+Cerebral peduncle right,CP-R,16.9712944030762,9.999e-05
+Anterior limb of internal capsule left,ALIC-L,9.7536826133728,1
+Anterior limb of internal capsule right,ALIC-R,13.7334489822388,1
+Posterior limb of internal capsule left,PLIC-L,15.3082756996155,0.9922008
+Posterior limb of internal capsule right,PLIC-R,17.900260925293,9.999e-05
+Retrolenticular part of internal capsule left,RLIC-L,19.0861225128174,9.999e-05
+Retrolenticular part of internal capsule right,RLIC-R,15.9054403305054,0.00019998
+Anterior corona radiata left,ACR-L,14.4618501663208,1
+Anterior corona radiata right,ACR-R,16.3835897445679,9.999e-05
+Superior corona radiata left,SCR-L,17.1343507766724,9.999e-05
+Superior corona radiata right,SCR-R,16.895058631897,9.999e-05
+Posterior corona radiata left,PCR-L,13.9176197052002,1
+Posterior corona radiata right,PCR-R,10.9554085731506,1
+Posterior thalamic radiation (include optic radiation) left,PTR-L,16.4544239044189,9.999e-05
+Posterior thalamic radiation (include optic radiation) right,PTR-R,12.4644417762756,1
+Sagittal stratum (include inferior longitidinal fasciculus and inferior fronto-occipital fasciculus) left,SS-L,16.7286491394043,9.999e-05
+Sagittal stratum (include inferior longitidinal fasciculus and inferior fronto-occipital fasciculus) right,SS-R,20.08030128479,9.999e-05
+External capsule left,EC-L,10.1240305900574,1
+External capsule right,EC-R,14.669153213501,1
+Cingulum (cingulate gyrus) left,CGC-L,12.2152795791626,1
+Cingulum (cingulate gyrus) right,CGC-R,13.4038219451904,1
+Cingulum (hippocampus) left,CGH-L,14.7613549232483,1
+Cingulum (hippocampus) right,CGH-R,10.2155847549438,1
+Fornix (cres) / Stria terminalis (can not be resolved with current resolution) left,FX/ST-L,19.6377267837524,9.999e-05
+Fornix (cres) / Stria terminalis (can not be resolved with current resolution) right,FX/ST-R,12.2799043655396,1
+Superior longitudinal fasciculus left,SLF-L,14.4669284820557,1
+Superior longitudinal fasciculus right,SLF-R,13.7166757583618,1
+Superior fronto-occipital fasciculus (could be a part of anterior internal capsule) left,SFO-L,10.368896484375,1
+Superior fronto-occipital fasciculus (could be a part of anterior internal capsule) right,SFO-R,13.1980619430542,1
+Inferior fronto-occipital fasciculus left,IFO-L,11.3715763092041,1
+Inferior fronto-occipital fasciculus right,IFO-R,17.4623050689697,9.999e-05
+Uncinate fasciculus left,UNC-L,20.6795539855957,9.999e-05
+Uncinate fasciculus right,UNC-R,24.6754236221314,9.999e-05
+Tapatum left,TAP-L,15.8138771057129,0.07239276
+Tapatum right,TAP-R,11.3819341659546,1

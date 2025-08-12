@@ -198,11 +198,16 @@
 
   <script>
     // ======== Base folders (adjust to your paths if needed) ========
-    const htmlBase = '3d_html_masks';  // Where your 3D HTML files live (e.g., 3d_html_masks/Dim_0.html)
-    const csvBase  = 'WM_stat';        // Where your CSV files live (e.g., WM_stat/Dim_0.csv)
+    const htmlBase = '3d_html_masks';  // ex: 3d_html_masks/Dim_0.html
+    const csvBase  = 'WM_stat';        // ex: WM_stat/Dim_0.csv
 
-    // ======== Build the mask list: Dim_0 ... Dim_127 ========
-    const masks = Array.from({ length: 128 }, (_, i) => `Dim_${i}`);
+    // ======== Build display (1-based) vs fetch/search (0-based) names ========
+    // Show:  Dim1 ... Dim128
+    // Value: Dim_0 ... Dim_127  (matches your file names)
+    const masks = Array.from({ length: 128 }, (_, i) => ({
+      label: `Dim${i + 1}`,  // what user sees; use `Dim_${i+1}` if you prefer underscore
+      value: `Dim_${i}`      // used for fetching files
+    }));
 
     // ======== DOM elements ========
     const selectEl = document.getElementById('mask-select');
@@ -210,25 +215,20 @@
     const tableContainer = document.getElementById('table-container');
 
     // Populate the dropdown
-    masks.forEach(name => {
+    masks.forEach(({ label, value }) => {
       const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
+      opt.value = value;       // e.g., "Dim_0"
+      opt.textContent = label; // e.g., "Dim1"
       selectEl.appendChild(opt);
     });
 
-    // ======== Option A: force a fixed display header (simple & robust) ========
-    // Use this if your CSV has no header or you want to standardize column names everywhere.
-    const DISPLAY_HEADER = ['WM tracts', 'Abbreviation', 'observed T value',  'P (Bonf.)'];
+    // ======== Display header (Option A: fixed headers) ========
+    // Use this if your CSV has no header or you want standardized names.
+    const DISPLAY_HEADER = ['WM tracts', 'Abbreviation', 'observed T value', 'P (Bonf.)'];
 
-    // Optional column reordering:
-    // If your original CSV column order is different and you want to display as 3,2,4,5 (R's 1-based),
-    // set 0-based indices here: [2,1,3,4]. Set to null to keep original order.
-    //const REORDER_IDX = []; // set to null if you don't need reordering
-
-    // ======== Option B: rename by original column names (use this OR Option A, not both) ========
-    // Enable this if your CSV already has a header and you just want to rename a few headers.
-    // If you use Option B, comment out the Option A header override block below.
+    // ======== (Optional) rename map (Option B: use instead of Option A) ========
+    // If you prefer renaming by original header names, enable Option B and
+    // comment out the Option A block in the change handler below.
     const renameMap = {
       'WM tracts': 'WM tracts',
       'Abbreviation': 'Abbreviation',
@@ -236,7 +236,7 @@
       'PBonf.': 'P (Bonf.)'
     };
 
-    // Utility: render the 2D array "rows" as a table in #table-container
+    // Utility: render a 2D array "rows" as a table
     function renderTable(rows) {
       const tbl = document.createElement('table');
 
@@ -264,23 +264,23 @@
 
     // Main: handle dropdown changes
     selectEl.addEventListener('change', async (e) => {
-      const name = e.target.value;
-      if (!name) {
+      const zeroBasedName = e.target.value; // "Dim_0" ... "Dim_127"
+      if (!zeroBasedName) {
         maskFrame.src = '';
         tableContainer.innerHTML = '';
         return;
       }
 
-      // Load the 3D HTML into the iframe
-      maskFrame.src = `${htmlBase}/${name}.html`;
+      // Load the 3D HTML into the iframe (0-based filename)
+      maskFrame.src = `${htmlBase}/${zeroBasedName}.html`;
 
       // Show a lightweight loading state for the table
       tableContainer.textContent = 'Loading CSV…';
 
       try {
         // Fetch CSV text (same-origin expected when hosted together)
-        const resp = await fetch(`${csvBase}/${name}.csv`);
-        if (!resp.ok) throw new Error(`CSV ${name} not found (${resp.status})`);
+        const resp = await fetch(`${csvBase}/${zeroBasedName}.csv`);
+        if (!resp.ok) throw new Error(`CSV ${zeroBasedName} not found (${resp.status})`);
         let text = await resp.text();
 
         // Normalize newlines and strip UTF-8 BOM if present
@@ -294,13 +294,8 @@
           return;
         }
 
-        // Optional: reorder columns if REORDER_IDX is set
-        // if (Array.isArray(REORDER_IDX)) {
-        //   rows = rows.map(r => REORDER_IDX.map(i => r[i] ?? ''));
-        // }
-
-        // ======== Option A in action: override or inject fixed headers ========
-        // Very simple heuristic to decide whether the first row looks like a header.
+        // ======== Option A: override or inject fixed headers ========
+        // Simple heuristic to decide whether first row looks like a header.
         const looksLikeHeader = rows.length && /[A-Za-z]/.test(rows[0].join(''));
         if (looksLikeHeader) {
           // Replace the header row with your fixed display names
@@ -311,10 +306,8 @@
           rows.unshift(DISPLAY_HEADER.slice(0, cols));
         }
 
-        // ======== Option B alternative (use instead of Option A) ========
-        // If you prefer renaming based on original names, uncomment below
-        // and comment out the Option A block above.
-        //
+        // ======== Option B (alternative): rename by original headers ========
+        // Use this instead of Option A above (comment Option A block if enabling).
         // if (rows.length) {
         //   rows[0] = rows[0].map(h => renameMap[h] ?? h);
         // }
@@ -325,6 +318,10 @@
         tableContainer.textContent = 'Unable to load CSV data.';
       }
     });
+
+    // (Optional) auto-select the first item on load:
+     selectEl.value = masks[0].value;           // "Dim_0"
+     selectEl.dispatchEvent(new Event('change'));
   </script>
 </body>
 </html>

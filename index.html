@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <title>UDIP—FA Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Modern font -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* === Viewer global scale (change this number to shrink/enlarge the embedded page) === */
-      --viewerScale: 0.75; /* e.g., 0.7 smaller, 0.85 larger */
+      /* Visible height for the brain-image area (the script scales the embedded page to fit this box) */
+      --viewerBoxHeight: 420px;  /* tweak 360/420/500 etc. */
     }
 
-    /* ========= Global reset & base typography ========= */
+    /* ===== Global reset & base typography ===== */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Roboto', sans-serif;
@@ -23,7 +24,7 @@
       flex-direction: column;
     }
 
-    /* ========= Top header ========= */
+    /* ===== Header with logo ===== */
     header {
       background: #fff;
       padding: 10px 20px;
@@ -33,51 +34,52 @@
     }
     header img { height: 50px; object-fit: contain; }
 
-    /* ========= Main split layout ========= */
+    /* ===== Two-column layout (left selector, right content) ===== */
     #container { display: flex; flex: 1; overflow: hidden; }
 
-    /* ========= Left panel ========= */
+    /* Left: mask selector */
     #mask-select-container {
       width: 220px; background: #fff; padding: 20px;
       border-right: 1px solid #e0e0e0; box-shadow: 2px 0 8px rgba(0,0,0,0.05);
     }
     #mask-select-container h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; color: #444; }
     #mask-select {
-      width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccd0d5; border-radius: 4px; appearance: none;
-      background: url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center;
-      background-color: #fff; background-size: 12px; cursor: pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-      transition: border-color .2s;
+      width: 100%; padding: 10px; font-size: 14px;
+      border: 1px solid #ccd0d5; border-radius: 4px; appearance: none;
+      /* custom dropdown arrow */
+      background:
+        url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
+        no-repeat right 12px center;
+      background-color: #fff; background-size: 12px; cursor: pointer;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border-color .2s;
     }
     #mask-select:hover { border-color: #a0a8b0; }
     #mask-select:focus { border-color: #5b9dd9; outline: none; box-shadow: 0 0 0 3px rgba(91,157,217,0.3); }
 
-    /* ========= Right panel: viewer + table ========= */
+    /* Right: top viewer + bottom CSV table */
     #main-panel {
       flex: 1; display: flex; flex-direction: column; background: #fff;
       margin: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;
     }
 
-    /* Top: 3D viewer (scaled) */
+    /* Top: brain-image viewer (the embedded page is scaled to fully fit) */
     #viewer-container {
-      flex: 0.9; /* viewer 更小；需要更小把这个数再调低，比如 0.7 */
+      height: var(--viewerBoxHeight);
       border-bottom: 1px solid #e0e0e0;
-      min-height: 200px;
-      overflow: hidden;          /* 隐藏缩放后可能溢出的区域 */
+      overflow: hidden;           /* no scrollbars for the viewer area */
       position: relative;
+      background: #fff;
     }
-    /* scaling wrapper: enlarge the inner box to counter scale, so内容不会被裁剪 */
+    /* Wrapper used for scaling the embedded page */
     #viewer-scale {
-      transform: scale(var(--viewerScale));
-      transform-origin: top left;
-      width: calc(100% / var(--viewerScale));
-      height: calc(100% / var(--viewerScale));
+      position: absolute; left: 0; top: 0;
+      transform-origin: top left;  /* scale from top-left corner */
     }
-    #mask-viewer { width: 100%; height: 100%; border: none; }
+    #mask-viewer { width: 100%; height: 100%; border: none; display: block; }
 
     /* Bottom: CSV table */
     #table-container {
-      flex: 1.6; /* 表格更大 */
-      overflow: auto; padding: 12px; background: #fafafa;
+      flex: 1; overflow: auto; padding: 12px; background: #fafafa;
     }
     #table-container table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
     #table-container th, #table-container td { border: 1px solid #ddd; padding: 8px 10px; font-size: 12px; }
@@ -85,7 +87,7 @@
     #table-container tbody tr:nth-child(even) { background: #fcfcfc; }
     #table-container td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* ========= Footer ========= */
+    /* ===== Footer ===== */
     footer {
       background: #fff; padding: 10px 20px; font-size: 12px; color: #666; text-align: center;
       border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
@@ -93,7 +95,7 @@
     footer a { color: #007acc; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
 
-    /* ========= Responsive ========= */
+    /* ===== Responsive ===== */
     @media (max-width: 900px) {
       #container { flex-direction: column; }
       #mask-select-container {
@@ -118,12 +120,13 @@
     </div>
 
     <div id="main-panel">
-      <!-- viewer with scaling wrapper -->
+      <!-- Viewer area (the embedded page is scaled to fit without scrolling) -->
       <div id="viewer-container">
         <div id="viewer-scale">
           <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
         </div>
       </div>
+      <!-- CSV table renders here -->
       <div id="table-container"></div>
     </div>
   </div>
@@ -136,15 +139,17 @@
   </footer>
 
   <script>
-    /* ======== Base folders ======== */
+    /* ===== Paths (relative to this HTML file) ===== */
     const htmlBase = '3d_html_masks';  // e.g., 3d_html_masks/Dim_0.html
     const csvBase  = 'WM_stat';        // e.g., WM_stat/Dim_0.csv
 
-    // Show: Dim1…Dim128 ; Fetch: Dim_0…Dim_127
+    /* Build dropdown: label = Dim1…Dim128 (shown), value = Dim_0…Dim_127 (file base) */
     const masks = Array.from({ length: 128 }, (_, i) => ({ label: `Dim${i + 1}`, value: `Dim_${i}` }));
 
-    const selectEl = document.getElementById('mask-select');
-    const maskFrame = document.getElementById('mask-viewer');
+    const selectEl       = document.getElementById('mask-select');
+    const maskFrame      = document.getElementById('mask-viewer');
+    const scaleWrapper   = document.getElementById('viewer-scale');
+    const viewerBox      = document.getElementById('viewer-container');
     const tableContainer = document.getElementById('table-container');
 
     masks.forEach(({ label, value }) => {
@@ -153,8 +158,10 @@
       selectEl.appendChild(opt);
     });
 
+    /* Standardized display headers for the CSV (use your preferred labels) */
     const DISPLAY_HEADER = ['WM tracts', 'Abbreviation', 'observed T value', 'P value'];
 
+    /* Render a 2D array into a HTML table inside #table-container */
     function renderTable(rows) {
       const tbl = document.createElement('table');
       const theadRow = tbl.createTHead().insertRow();
@@ -164,39 +171,74 @@
       tableContainer.innerHTML = ''; tableContainer.appendChild(tbl);
     }
 
-    // Hide dropdowns/toolbars inside the embedded viewer (same-origin required)
-    function hideInnerDropdowns() {
+    /* Scale the embedded page to fully fit the viewer box (same-origin required) */
+    function fitEmbeddedViewer() {
       try {
-        const doc = maskFrame.contentDocument || maskFrame.contentWindow?.document;
+        const doc  = maskFrame.contentDocument || maskFrame.contentWindow?.document;
         if (!doc) return;
-        // Hide generic dropdowns
-        doc.querySelectorAll('select').forEach(el => el.style.display = 'none');
-        // Hide common papaya toolbar containers if present
-        doc.querySelectorAll('.papaya-toolbar, #papayaToolbar, .papayaMenu, .papaya-control').forEach(el => el.style.display = 'none');
+
+        // Estimate the intrinsic content size of the embedded page
+        const el   = doc.documentElement;
+        const body = doc.body;
+        const contentW = Math.max(el.scrollWidth, el.offsetWidth, el.clientWidth,
+                                  body?.scrollWidth || 0, body?.offsetWidth || 0, body?.clientWidth || 0);
+        const contentH = Math.max(el.scrollHeight, el.offsetHeight, el.clientHeight,
+                                  body?.scrollHeight || 0, body?.offsetHeight || 0, body?.clientHeight || 0);
+
+        // Target box size
+        const boxW = viewerBox.clientWidth;
+        const boxH = viewerBox.clientHeight;
+
+        // Scale so that both width and height fit
+        const scale = Math.min(boxW / contentW, boxH / contentH, 1);
+
+        // Set wrapper to the intrinsic size, then scale the whole page
+        scaleWrapper.style.width     = contentW + 'px';
+        scaleWrapper.style.height    = contentH + 'px';
+        scaleWrapper.style.transform = `scale(${scale})`;
+
+        // Hide scrollbars inside the embedded page (same-origin only)
+        if (body) body.style.overflow = 'hidden';
+        el.style.overflow = 'hidden';
+
+        // Optionally hide dropdowns/toolbars inside the embedded page
+        doc.querySelectorAll('select, .papaya-toolbar, #papayaToolbar, .papayaMenu, .papaya-control')
+           .forEach(n => n.style.display = 'none');
+
       } catch (e) {
-        // Cross-origin protection or no access
-        console.warn('Cannot access embedded document to hide controls:', e);
+        // Cross-origin: cannot access the embedded document; ignore.
+        console.warn('fitEmbeddedViewer skipped (cross-origin):', e);
       }
     }
 
+    /* On selection: load iframe & CSV, then fit the embedded viewer */
     selectEl.addEventListener('change', async (e) => {
       const name = e.target.value;
       if (!name) { maskFrame.src = ''; tableContainer.innerHTML = ''; return; }
 
+      // Load the HTML page for the selected dimension
+      maskFrame.onload = () => {
+        // Run multiple times to account for late image draws inside the embedded page
+        fitEmbeddedViewer();
+        setTimeout(fitEmbeddedViewer, 150);
+        setTimeout(fitEmbeddedViewer, 400);
+      };
       maskFrame.src = `${htmlBase}/${name}.html`;
-      // when iframe loads, try hiding dropdowns inside it
-      maskFrame.onload = hideInnerDropdowns;
 
+      // Load CSV and render as a table
       tableContainer.textContent = 'Loading CSV…';
       try {
         const resp = await fetch(`${csvBase}/${name}.csv`);
         if (!resp.ok) throw new Error(`CSV ${name} not found (${resp.status})`);
-        let text = (await resp.text()).replace(/^\uFEFF/, '');
-        const rows = text.trim().split(/\r?\n/).map(line => line.split(','));
+        let text = (await resp.text()).replace(/^\uFEFF/, '');           // strip BOM if present
+        const rows = text.trim().split(/\r?\n/).map(line => line.split(','));  // simple CSV split
         if (!rows.length || !rows[0].length) { tableContainer.textContent = 'CSV is empty or malformed.'; return; }
+
+        // Replace header (or insert one if missing)
         const looksLikeHeader = /[A-Za-z]/.test(rows[0].join(''));
         if (looksLikeHeader) rows[0] = DISPLAY_HEADER.slice(0, rows[0].length);
         else rows.unshift(DISPLAY_HEADER.slice(0, rows[0].length || DISPLAY_HEADER.length));
+
         renderTable(rows);
       } catch (err) {
         console.error(err);
@@ -204,7 +246,10 @@
       }
     });
 
-    // Auto-select the first item
+    // Re-fit the embedded page when the window size changes
+    window.addEventListener('resize', () => setTimeout(fitEmbeddedViewer, 50));
+
+    // Auto-select the first item on load
     selectEl.value = masks[0].value;
     selectEl.dispatchEvent(new Event('change'));
   </script>

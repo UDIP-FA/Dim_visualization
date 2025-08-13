@@ -4,10 +4,14 @@
   <meta charset="UTF-8" />
   <title>UDIP—FA Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Modern font -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
 
   <style>
+    :root{
+      /* === Viewer global scale (change this number to shrink/enlarge the embedded page) === */
+      --viewerScale: 0.75; /* e.g., 0.7 smaller, 0.85 larger */
+    }
+
     /* ========= Global reset & base typography ========= */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -27,138 +31,74 @@
       display: flex;
       align-items: center;
     }
-    header img {
-      height: 50px;            /* Keep logo height consistent */
-      object-fit: contain;     /* Avoid distortion for non-16:9 logos */
-    }
+    header img { height: 50px; object-fit: contain; }
 
-    /* ========= Main split layout (left selector + right content) ========= */
-    #container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;        /* Prevent double scrollbars */
-    }
+    /* ========= Main split layout ========= */
+    #container { display: flex; flex: 1; overflow: hidden; }
 
-    /* ========= Left panel: mask selector ========= */
+    /* ========= Left panel ========= */
     #mask-select-container {
-      width: 220px;
-      background: #fff;
-      padding: 20px;
-      border-right: 1px solid #e0e0e0;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+      width: 220px; background: #fff; padding: 20px;
+      border-right: 1px solid #e0e0e0; box-shadow: 2px 0 8px rgba(0,0,0,0.05);
     }
-    #mask-select-container h3 {
-      font-size: 16px;
-      font-weight: 500;
-      margin-bottom: 12px;
-      color: #444;
-    }
+    #mask-select-container h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; color: #444; }
     #mask-select {
-      width: 100%;
-      padding: 10px;
-      font-size: 14px;
-      border: 1px solid #ccd0d5;
-      border-radius: 4px;
-      appearance: none;  /* Hide native arrow for consistent styling */
-      /* Custom dropdown arrow */
-      background:
-        url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
-        no-repeat right 12px center;
-      background-color: #fff;
-      background-size: 12px;
-      cursor: pointer;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+      width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ccd0d5; border-radius: 4px; appearance: none;
+      background: url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center;
+      background-color: #fff; background-size: 12px; cursor: pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
       transition: border-color .2s;
     }
     #mask-select:hover { border-color: #a0a8b0; }
-    #mask-select:focus {
-      border-color: #5b9dd9;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(91,157,217,0.3);
-    }
+    #mask-select:focus { border-color: #5b9dd9; outline: none; box-shadow: 0 0 0 3px rgba(91,157,217,0.3); }
 
-    /* ========= Right panel: viewer (iframe) + table ========= */
+    /* ========= Right panel: viewer + table ========= */
     #main-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      margin: 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;        /* Clip inner scroll at rounded corners */
+      flex: 1; display: flex; flex-direction: column; background: #fff;
+      margin: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;
     }
 
-    /* Top: 3D viewer ——— 缩小一点：把 flex 从 2 改为 1 */
+    /* Top: 3D viewer (scaled) */
     #viewer-container {
-      flex: 1;                 /* ← 调小/调大：改这个数字 */
+      flex: 0.9; /* viewer 更小；需要更小把这个数再调低，比如 0.7 */
       border-bottom: 1px solid #e0e0e0;
-      min-height: 220px;       /* Ensure usable height on short screens */
+      min-height: 200px;
+      overflow: hidden;          /* 隐藏缩放后可能溢出的区域 */
+      position: relative;
     }
-    #mask-viewer {
-      width: 100%;
-      height: 100%;
-      border: none;
+    /* scaling wrapper: enlarge the inner box to counter scale, so内容不会被裁剪 */
+    #viewer-scale {
+      transform: scale(var(--viewerScale));
+      transform-origin: top left;
+      width: calc(100% / var(--viewerScale));
+      height: calc(100% / var(--viewerScale));
     }
+    #mask-viewer { width: 100%; height: 100%; border: none; }
 
-    /* Bottom: CSV table ——— 扩大一点：把 flex 从 1 改为 1.5 */
+    /* Bottom: CSV table */
     #table-container {
-      flex: 1.5;               /* ← 调小/调大：改这个数字 */
-      overflow: auto;          /* Scroll table when large */
-      padding: 12px;
-      background: #fafafa;
+      flex: 1.6; /* 表格更大 */
+      overflow: auto; padding: 12px; background: #fafafa;
     }
-    #table-container table {
-      width: 100%;
-      border-collapse: collapse;
-      font-variant-numeric: tabular-nums;  /* Align digits nicely */
-    }
-    #table-container th,
-    #table-container td {
-      border: 1px solid #ddd;
-      padding: 8px 10px;
-      font-size: 12px;
-    }
-    #table-container th {
-      background: #f1f1f1;
-      font-weight: 500;
-      position: sticky;   /* Sticky header stays visible while scrolling */
-      top: 0;
-      z-index: 1;
-    }
-    /* Zebra stripes for readability */
+    #table-container table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    #table-container th, #table-container td { border: 1px solid #ddd; padding: 8px 10px; font-size: 12px; }
+    #table-container th { background: #f1f1f1; font-weight: 500; position: sticky; top: 0; z-index: 1; }
     #table-container tbody tr:nth-child(even) { background: #fcfcfc; }
-    /* Truncate very long cell content gracefully */
-    #table-container td {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    #table-container td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ========= Footer ========= */
     footer {
-      background: #fff;
-      padding: 10px 20px;
-      font-size: 12px;
-      color: #666;
-      text-align: center;
-      border-top: 1px solid #e0e0e0;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+      background: #fff; padding: 10px 20px; font-size: 12px; color: #666; text-align: center;
+      border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
     }
     footer a { color: #007acc; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
 
-    /* ========= Responsive tweaks ========= */
+    /* ========= Responsive ========= */
     @media (max-width: 900px) {
       #container { flex-direction: column; }
       #mask-select-container {
-        width: auto;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-right: none;
-        border-bottom: 1px solid #e0e0e0;
-        box-shadow: none;
+        width: auto; display: flex; align-items: center; gap: 12px;
+        border-right: none; border-bottom: 1px solid #e0e0e0; box-shadow: none;
       }
       #main-panel { margin: 10px; }
     }
@@ -178,8 +118,11 @@
     </div>
 
     <div id="main-panel">
+      <!-- viewer with scaling wrapper -->
       <div id="viewer-container">
-        <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
+        <div id="viewer-scale">
+          <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
+        </div>
       </div>
       <div id="table-container"></div>
     </div>
@@ -193,73 +136,67 @@
   </footer>
 
   <script>
-    // ======== Base folders (adjust to your paths if needed) ========
-    const htmlBase = '3d_html_masks';  // ex: 3d_html_masks/Dim_0.html
-    const csvBase  = 'WM_stat';        // ex: WM_stat/Dim_0.csv
+    /* ======== Base folders ======== */
+    const htmlBase = '3d_html_masks';  // e.g., 3d_html_masks/Dim_0.html
+    const csvBase  = 'WM_stat';        // e.g., WM_stat/Dim_0.csv
 
-    // Show: Dim1 ... Dim128 ; Value: Dim_0 ... Dim_127 (matches file names)
-    const masks = Array.from({ length: 128 }, (_, i) => ({
-      label: `Dim${i + 1}`,
-      value: `Dim_${i}`
-    }));
+    // Show: Dim1…Dim128 ; Fetch: Dim_0…Dim_127
+    const masks = Array.from({ length: 128 }, (_, i) => ({ label: `Dim${i + 1}`, value: `Dim_${i}` }));
 
     const selectEl = document.getElementById('mask-select');
     const maskFrame = document.getElementById('mask-viewer');
     const tableContainer = document.getElementById('table-container');
 
-    // Populate the dropdown
     masks.forEach(({ label, value }) => {
       const opt = document.createElement('option');
-      opt.value = value;
-      opt.textContent = label;
+      opt.value = value; opt.textContent = label;
       selectEl.appendChild(opt);
     });
 
-    // Use standardized display headers for the CSV
     const DISPLAY_HEADER = ['WM tracts', 'Abbreviation', 'observed T value', 'P value'];
 
     function renderTable(rows) {
       const tbl = document.createElement('table');
       const theadRow = tbl.createTHead().insertRow();
-      rows[0].forEach(c => {
-        const th = document.createElement('th');
-        th.textContent = c;
-        theadRow.appendChild(th);
-      });
+      rows[0].forEach(c => { const th = document.createElement('th'); th.textContent = c; theadRow.appendChild(th); });
       const tbody = tbl.createTBody();
-      rows.slice(1).forEach(r => {
-        const tr = tbody.insertRow();
-        r.forEach(c => {
-          const td = tr.insertCell();
-          td.textContent = c;
-        });
-      });
-      tableContainer.innerHTML = '';
-      tableContainer.appendChild(tbl);
+      rows.slice(1).forEach(r => { const tr = tbody.insertRow(); r.forEach(c => { const td = tr.insertCell(); td.textContent = c; }); });
+      tableContainer.innerHTML = ''; tableContainer.appendChild(tbl);
+    }
+
+    // Hide dropdowns/toolbars inside the embedded viewer (same-origin required)
+    function hideInnerDropdowns() {
+      try {
+        const doc = maskFrame.contentDocument || maskFrame.contentWindow?.document;
+        if (!doc) return;
+        // Hide generic dropdowns
+        doc.querySelectorAll('select').forEach(el => el.style.display = 'none');
+        // Hide common papaya toolbar containers if present
+        doc.querySelectorAll('.papaya-toolbar, #papayaToolbar, .papayaMenu, .papaya-control').forEach(el => el.style.display = 'none');
+      } catch (e) {
+        // Cross-origin protection or no access
+        console.warn('Cannot access embedded document to hide controls:', e);
+      }
     }
 
     selectEl.addEventListener('change', async (e) => {
-      const name = e.target.value; // "Dim_0" ... "Dim_127"
+      const name = e.target.value;
       if (!name) { maskFrame.src = ''; tableContainer.innerHTML = ''; return; }
 
-      // Load the 3D HTML (viewer)
       maskFrame.src = `${htmlBase}/${name}.html`;
+      // when iframe loads, try hiding dropdowns inside it
+      maskFrame.onload = hideInnerDropdowns;
 
-      // Load the CSV and render
       tableContainer.textContent = 'Loading CSV…';
       try {
         const resp = await fetch(`${csvBase}/${name}.csv`);
         if (!resp.ok) throw new Error(`CSV ${name} not found (${resp.status})`);
         let text = (await resp.text()).replace(/^\uFEFF/, '');
-
         const rows = text.trim().split(/\r?\n/).map(line => line.split(','));
         if (!rows.length || !rows[0].length) { tableContainer.textContent = 'CSV is empty or malformed.'; return; }
-
-        // Replace header (or insert if missing)
         const looksLikeHeader = /[A-Za-z]/.test(rows[0].join(''));
         if (looksLikeHeader) rows[0] = DISPLAY_HEADER.slice(0, rows[0].length);
         else rows.unshift(DISPLAY_HEADER.slice(0, rows[0].length || DISPLAY_HEADER.length));
-
         renderTable(rows);
       } catch (err) {
         console.error(err);
@@ -267,7 +204,7 @@
       }
     });
 
-    // Auto-select first item on load
+    // Auto-select the first item
     selectEl.value = masks[0].value;
     selectEl.dispatchEvent(new Event('change'));
   </script>

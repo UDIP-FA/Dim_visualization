@@ -9,8 +9,9 @@
 
   <style>
     :root{
-      /* Visible height for the brain-image area (the script scales the embedded page to fit this box) */
-      --viewerBoxHeight: 420px;  /* tweak 360/420/500 etc. */
+      /* Default visible height for the brain-image area.
+         Increase (e.g., 620–700px) to make the viewer taller by default. */
+      --viewerBoxHeight: 620px;
     }
 
     /* ===== Global reset & base typography ===== */
@@ -62,11 +63,11 @@
       margin: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;
     }
 
-    /* Top: brain-image viewer (the embedded page is scaled to fully fit) */
+    /* Top: brain-image viewer (embedded page is scaled to fully fit) */
     #viewer-container {
       height: var(--viewerBoxHeight);
       border-bottom: 1px solid #e0e0e0;
-      overflow: hidden;           /* no scrollbars for the viewer area */
+      overflow: hidden;            /* no scrollbars for the viewer area */
       position: relative;
       background: #fff;
     }
@@ -171,13 +172,15 @@
       tableContainer.innerHTML = ''; tableContainer.appendChild(tbl);
     }
 
-    /* Scale the embedded page to fully fit the viewer box (same-origin required) */
+    /* Fit & scale the embedded page.
+       NEW: allow scale > 1 to enlarge when the embedded page is small.
+       If we enlarge or enforce a minimum scale, auto-raise the container height so the whole page stays visible. */
     function fitEmbeddedViewer() {
       try {
         const doc  = maskFrame.contentDocument || maskFrame.contentWindow?.document;
         if (!doc) return;
 
-        // Estimate the intrinsic content size of the embedded page
+        // Intrinsic content size of the embedded page
         const el   = doc.documentElement;
         const body = doc.body;
         const contentW = Math.max(el.scrollWidth, el.offsetWidth, el.clientWidth,
@@ -185,14 +188,29 @@
         const contentH = Math.max(el.scrollHeight, el.offsetHeight, el.clientHeight,
                                   body?.scrollHeight || 0, body?.offsetHeight || 0, body?.clientHeight || 0);
 
-        // Target box size
+        // Available box size (current viewer container)
         const boxW = viewerBox.clientWidth;
         const boxH = viewerBox.clientHeight;
 
-        // Scale so that both width and height fit
-        const scale = Math.min(boxW / contentW, boxH / contentH, 1);
+        // Fit scale (can be > 1 to ENLARGE when content is smaller than the box)
+        let scaleFit = Math.min(boxW / contentW, boxH / contentH);
 
-        // Set wrapper to the intrinsic size, then scale the whole page
+        // Clamp to a sane range
+        const MIN_SCALE = 0.80;  // don't go tinier than this
+        const MAX_SCALE = 2.50;  // avoid extreme upscaling artifacts
+        let scale = Math.max(Math.min(scaleFit, MAX_SCALE), MIN_SCALE);
+
+        // If we ended up larger than the fit (scale > scaleFit), expand the box height to keep full content visible
+        const scaledH = Math.ceil(contentH * scale);
+        const needGrow = scale > scaleFit || scaledH > boxH;
+        if (needGrow) {
+          viewerBox.style.height = scaledH + 'px';
+        } else {
+          // Reset to CSS var height in case it was expanded earlier
+          viewerBox.style.height = '';
+        }
+
+        // Apply scale: set wrapper to intrinsic size, then transform
         scaleWrapper.style.width     = contentW + 'px';
         scaleWrapper.style.height    = contentH + 'px';
         scaleWrapper.style.transform = `scale(${scale})`;

@@ -4,154 +4,142 @@
   <meta charset="UTF-8" />
   <title>UDIP—FA Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
   <!-- Modern font -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* Max visible height for the brain-image viewer area.
-         Increase if you want a taller viewer (e.g., 560px / 620px). */
-      --viewerMaxHeight: 520px;
+      /* 可自行调高/调低默认查看器高度 */
+      --viewerHeight: 70vh;
     }
 
-    /* ===== Global reset & base typography ===== */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
       background: #f5f7fa;
       color: #333;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    /* ===== Header with logo ===== */
-    header {
+    /* 顶部栏 */
+    header.navbar {
       background: #fff;
-      padding: 10px 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
-    header img { height: 50px; object-fit: contain; }
+    header .navbar-brand img { height: 44px; object-fit: contain; }
 
-    /* ===== Two-column layout (left selector, right content) ===== */
-    #container { display: flex; flex: 1; overflow: hidden; }
-
-    /* Left: mask selector */
-    #mask-select-container {
-      width: 220px; background: #fff; padding: 20px;
-      border-right: 1px solid #e0e0e0; box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-    }
-    #mask-select-container h3 { font-size: 16px; font-weight: 500; margin-bottom: 12px; color: #444; }
-    #mask-select {
-      width: 100%; padding: 10px; font-size: 14px;
-      border: 1px solid #ccd0d5; border-radius: 4px; appearance: none;
-      /* custom dropdown arrow */
-      background:
-        url('data:image/svg+xml;utf8,<svg fill="%23666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>')
-        no-repeat right 12px center;
-      background-color: #fff; background-size: 12px; cursor: pointer;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border-color .2s;
-    }
-    #mask-select:hover { border-color: #a0a8b0; }
-    #mask-select:focus { border-color: #5b9dd9; outline: none; box-shadow: 0 0 0 3px rgba(91,157,217,0.3); }
-
-    /* Right: top viewer + bottom CSV table */
-    #main-panel {
-      flex: 1; display: flex; flex-direction: column; background: #fff;
-      margin: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;
+    /* 左侧选择面板（用卡片风格） */
+    .sidebar-card {
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
 
-    /* Top: brain-image viewer */
+    /* 右侧：上方查看器 + 下方表格 */
     #viewer-container {
-      /* We will set the final height in JS (≤ --viewerMaxHeight). */
-      height: var(--viewerMaxHeight);
-      border-bottom: 1px solid #e0e0e0;
-      overflow: hidden;            /* no scrollbars for the viewer area */
-      position: relative;
+      height: var(--viewerHeight);
+      border: 1px solid #e0e0e0;
       background: #fff;
+      border-radius: .375rem;
+      overflow: auto;         /* 重要：超出时滚动，不缩放 */
+      resize: vertical;       /* 允许用户拖拽调整高度 */
     }
-    /* Wrapper used for downscaling the embedded page when needed */
-    #viewer-scale {
-      position: absolute; left: 0; top: 0;
-      transform-origin: top left;  /* scale from top-left corner */
+    #mask-viewer {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
     }
-    #mask-viewer { width: 100%; height: 100%; border: none; display: block; }
-
-    /* Bottom: CSV table */
     #table-container {
-      flex: 1; overflow: auto; padding: 12px; background: #fafafa;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: .375rem;
+      padding: .75rem;
     }
-    #table-container table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-    #table-container th, #table-container td { border: 1px solid #ddd; padding: 8px 10px; font-size: 12px; }
-    #table-container th { background: #f1f1f1; font-weight: 500; position: sticky; top: 0; z-index: 1; }
-    #table-container tbody tr:nth-child(even) { background: #fcfcfc; }
-    #table-container td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* ===== Footer ===== */
     footer {
-      background: #fff; padding: 10px 20px; font-size: 12px; color: #666; text-align: center;
-      border-top: 1px solid #e0e0e0; box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+      background: #fff;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #e0e0e0;
     }
-    footer a { color: #007acc; text-decoration: none; }
+    footer a { color: #0d6efd; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 900px) {
-      #container { flex-direction: column; }
-      #mask-select-container {
-        width: auto; display: flex; align-items: center; gap: 12px;
-        border-right: none; border-bottom: 1px solid #e0e0e0; box-shadow: none;
-      }
-      #main-panel { margin: 10px; }
-    }
   </style>
 </head>
 <body>
-  <header>
-    <img src="logo-horizontal.png" alt="UTHealth Houston – McWilliams School Logo">
+  <!-- Header -->
+  <header class="navbar navbar-light px-3">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <img src="logo-horizontal.png" alt="UTHealth Houston – McWilliams School Logo">
+      <span class="fw-medium">UDIP—FA Viewer</span>
+    </a>
   </header>
 
-  <div id="container">
-    <div id="mask-select-container">
-      <h3>Select a dimension for visualization</h3>
-      <select id="mask-select">
-        <option value="">-- choose a mask --</option>
-      </select>
-    </div>
-
-    <div id="main-panel">
-      <!-- Viewer area -->
-      <div id="viewer-container">
-        <div id="viewer-scale">
-          <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
+  <!-- Main -->
+  <main class="container-fluid my-3 flex-grow-1">
+    <div class="row g-3">
+      <!-- Left: selector -->
+      <div class="col-12 col-md-3 col-lg-2">
+        <div class="card sidebar-card">
+          <div class="card-body">
+            <h6 class="card-title mb-3">Select a dimension for visualization</h6>
+            <select id="mask-select" class="form-select">
+              <option value="">-- choose a mask --</option>
+            </select>
+          </div>
         </div>
       </div>
-      <!-- CSV table renders here -->
-      <div id="table-container"></div>
-    </div>
-  </div>
 
-  <footer>
+      <!-- Right: viewer + table -->
+      <div class="col-12 col-md-9 col-lg-10">
+        <div class="mb-3">
+          <!-- Viewer area: 不缩放，原始显示；溢出滚动 -->
+          <div id="viewer-container">
+            <iframe id="mask-viewer" name="maskFrame" src="" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div id="table-container" class="table-responsive">
+          <!-- CSV table renders here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-3 text-center px-3">
     Unveiling genetic architecture of white matter microstructure through unsupervised deep representation learning of fractional anisotropy images<br>
     Xingzhong Zhao, Ziqian Xie, Wei He, Myriam Fornage, Degui Zhi<br>
     medRxiv 2025.07.04.25330856; doi:
     <a href="https://doi.org/10.1101/2025.07.04.25330856" target="_blank">10.1101/2025.07.04.25330856</a>
   </footer>
 
+  <!-- Bootstrap JS (可选，用于未来组件) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+
   <script>
-    /* ===== Paths (relative to this HTML file) ===== */
-    const htmlBase = '3d_html_masks';  // e.g., 3d_html_masks/Dim_0.html  (rendered with large width_view for clarity)
+    /* ===== 路径（相对本HTML） ===== */
+    const htmlBase = '3d_html_masks';  // e.g., 3d_html_masks/Dim_0.html
     const csvBase  = 'WM_stat';        // e.g., WM_stat/Dim_0.csv
 
-    /* Build dropdown: label = Dim1…Dim128 (shown), value = Dim_0…Dim_127 (file base) */
+    /* 构建下拉：Dim1…Dim128（显示），值：Dim_0…Dim_127（文件基名） */
     const masks = Array.from({ length: 128 }, (_, i) => ({ label: `Dim${i + 1}`, value: `Dim_${i}` }));
 
     const selectEl       = document.getElementById('mask-select');
     const maskFrame      = document.getElementById('mask-viewer');
-    const scaleWrapper   = document.getElementById('viewer-scale');
-    const viewerBox      = document.getElementById('viewer-container');
     const tableContainer = document.getElementById('table-container');
 
     masks.forEach(({ label, value }) => {
@@ -160,82 +148,48 @@
       selectEl.appendChild(opt);
     });
 
-    /* Standardized display headers for the CSV (edit if needed) */
+    /* 标准化表头（可按需改名） */
     const DISPLAY_HEADER = ['WM tracts', 'Abbreviation', 'observed T value', 'P value'];
 
     function renderTable(rows) {
       const tbl = document.createElement('table');
-      const theadRow = tbl.createTHead().insertRow();
-      rows[0].forEach(c => { const th = document.createElement('th'); th.textContent = c; theadRow.appendChild(th); });
+      tbl.className = 'table table-sm table-hover align-middle mb-0';
+
+      const thead = tbl.createTHead();
+      const theadRow = thead.insertRow();
+      rows[0].forEach(c => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = c;
+        theadRow.appendChild(th);
+      });
+
       const tbody = tbl.createTBody();
-      rows.slice(1).forEach(r => { const tr = tbody.insertRow(); r.forEach(c => { const td = tr.insertCell(); td.textContent = c; }); });
-      tableContainer.innerHTML = ''; tableContainer.appendChild(tbl);
+      rows.slice(1).forEach(r => {
+        const tr = tbody.insertRow();
+        r.forEach(c => {
+          const td = tr.insertCell();
+          td.textContent = c;
+        });
+      });
+
+      tableContainer.innerHTML = '';
+      tableContainer.appendChild(tbl);
     }
 
-    /* Downscale-only fit:
-       - Never upscale (keeps crispness).
-       - If content is larger than the box, scale down to fit within both width & max height.
-       - Ensure viewer height ≤ --viewerMaxHeight so the CSV panel always remains visible. */
-    function fitEmbeddedViewer() {
-      try {
-        const doc  = maskFrame.contentDocument || maskFrame.contentWindow?.document;
-        if (!doc) return;
-
-        const el   = doc.documentElement;
-        const body = doc.body;
-
-        const contentW = Math.max(el.scrollWidth, el.offsetWidth, el.clientWidth,
-                                  body?.scrollWidth || 0, body?.offsetWidth || 0, body?.clientWidth || 0);
-        const contentH = Math.max(el.scrollHeight, el.offsetHeight, el.clientHeight,
-                                  body?.scrollHeight || 0, body?.offsetHeight || 0, body?.clientHeight || 0);
-
-        const boxW = viewerBox.clientWidth;
-        const maxH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--viewerMaxHeight')) || 520;
-
-        // Compute downscale factor so content fits within width and max height; never upscale (>1)
-        const scale = Math.min(1, boxW / contentW, maxH / contentH);
-
-        // Set viewer's actual height = scaled content height (≤ maxH)
-        const scaledH = Math.ceil(contentH * scale);
-        viewerBox.style.height = scaledH + 'px';
-
-        // Apply: wrapper at intrinsic size, then scale down if needed
-        scaleWrapper.style.width     = contentW + 'px';
-        scaleWrapper.style.height    = contentH + 'px';
-        scaleWrapper.style.transform = `scale(${scale})`;
-
-        // Optional: hide dropdowns/toolbars in the embedded page (same-origin)
-        doc.querySelectorAll('select, .papaya-toolbar, #papayaToolbar, .papayaMenu, .papaya-control')
-           .forEach(n => n.style.display = 'none');
-
-        // Prevent scrollbars inside the embedded page
-        if (body) body.style.overflow = 'hidden';
-        el.style.overflow = 'hidden';
-
-      } catch (e) {
-        // Cross-origin – cannot access the embedded doc; skip adjustments
-        console.warn('fitEmbeddedViewer skipped (cross-origin):', e);
-      }
-    }
-
-    /* On selection: load iframe & CSV, then fit the embedded viewer (downscale-only) */
+    /* 选择变更：仅加载 iframe & CSV，不进行任何缩放处理 */
     selectEl.addEventListener('change', async (e) => {
       const name = e.target.value;
       if (!name) { maskFrame.src = ''; tableContainer.innerHTML = ''; return; }
 
-      maskFrame.onload = () => {
-        fitEmbeddedViewer();
-        // A second pass in case the embedded page draws late (images/canvas)
-        setTimeout(fitEmbeddedViewer, 150);
-      };
       maskFrame.src = `${htmlBase}/${name}.html`;
 
-      // Load CSV and render as a table
+      // 加载 CSV 并渲染
       tableContainer.textContent = 'Loading CSV…';
       try {
         const resp = await fetch(`${csvBase}/${name}.csv`);
         if (!resp.ok) throw new Error(`CSV ${name} not found (${resp.status})`);
-        let text = (await resp.text()).replace(/^\uFEFF/, '');
+        let text = (await resp.text()).replace(/^\uFEFF/, ''); // 去掉可能的 BOM
         const rows = text.trim().split(/\r?\n/).map(line => line.split(','));
         if (!rows.length || !rows[0].length) { tableContainer.textContent = 'CSV is empty or malformed.'; return; }
 
@@ -250,10 +204,7 @@
       }
     });
 
-    // Re-fit when window width changes (affects available width for downscale)
-    window.addEventListener('resize', () => setTimeout(fitEmbeddedViewer, 50));
-
-    // Auto-select the first item on load
+    // 首次自动选择第一项
     selectEl.value = masks[0].value;
     selectEl.dispatchEvent(new Event('change'));
   </script>
